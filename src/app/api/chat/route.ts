@@ -19,17 +19,39 @@ const deepseek = createOpenAI({
 export async function POST(req: Request) {
   console.log('POST /api/chat called');
   try {
-    const { messages } = await req.json();
-    console.log('Received messages:', JSON.stringify(messages, null, 2));
+    const { messages, data } = await req.json();
+    console.log('Received data:', JSON.stringify(data, null, 2));
 
-    console.log(
-      'Is DEEPSEEK_API_KEY set?',
-      process.env.DEEPSEEK_API_KEY ? 'Yes, starting with ' + process.env.DEEPSEEK_API_KEY.slice(0, 4) : 'No',
-    );
+    let system: string | undefined = undefined;
+    let finalMessages = messages;
+
+    if (data?.isDecision === "true") {
+      const { systemPrompt, options, context } = data;
+      const parsedOptions = JSON.parse(options);
+
+      system = systemPrompt;
+
+      const fullUserPrompt = `Help me decide between the following options:\n${parsedOptions
+        .map((opt: string) => `- ${opt}`)
+        .join(
+          "\n",
+        )}\n\nContext: ${context || "No context provided."}`;
+
+      // Replace the last, user-facing message with the full prompt for the AI
+      finalMessages = [
+        ...messages.slice(0, -1),
+        { role: "user", content: fullUserPrompt },
+      ];
+
+      console.log(
+        'This is a decision request. Using system prompt and modified user prompt.',
+      );
+    }
 
     const result = await streamText({
       model: deepseek('deepseek-chat'),
-      messages,
+      system,
+      messages: finalMessages,
       async onFinish(result) {
         console.log('Stream finished successfully.');
       },
