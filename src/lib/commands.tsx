@@ -1,4 +1,4 @@
-import { Lightbulb, Shirt, Paintbrush, BookOpen } from "lucide-react"
+import { Lightbulb, Shirt, Paintbrush } from "lucide-react"
 import * as React from "react"
 
 export interface CommandSuggestion {
@@ -30,11 +30,5 @@ export const commandSuggestions: CommandSuggestion[] = [
     description: "Pottery assistance",
     prefix: "/pottery",
     action: "open_pottery_dialog",
-  },
-  {
-    icon: <BookOpen className="w-4 h-4" />,
-    label: "Study Assist",
-    description: "Get help with your studies",
-    prefix: "/study",
   },
 ] 

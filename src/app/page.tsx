@@ -4,7 +4,6 @@ import { useChat } from "@ai-sdk/react"
 import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
-  Paperclip,
   SendIcon,
   XIcon,
   LoaderIcon,
@@ -22,10 +21,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea"
 import { TypingDots } from "@/components/chat/TypingDots"
-import {
-  commandSuggestions,
-  type CommandSuggestion,
-} from "@/lib/commands"
+import { commandSuggestions } from "@/lib/commands"
 import { handleDecide, handleOotd, handlePottery } from "@/lib/chat-actions"
 
 export default function AnimatedAIChat() {
@@ -38,7 +34,6 @@ export default function AnimatedAIChat() {
     setInput,
     append,
   } = useChat()
-  const [attachments, setAttachments] = useState<string[]>([])
   const [activeSuggestion, setActiveSuggestion] = useState<number>(-1)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
@@ -170,15 +165,6 @@ export default function AnimatedAIChat() {
     }
   }
 
-  const handleAttachFile = () => {
-    const mockFileName = `file-${Math.floor(Math.random() * 1000)}.pdf`
-    setAttachments(prev => [...prev, mockFileName])
-  }
-
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index))
-  }
-
   return (
     <>
       <HelpMeDecideDialog
@@ -206,42 +192,45 @@ export default function AnimatedAIChat() {
           <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-fuchsia-500/10 rounded-full mix-blend-normal filter blur-[96px] animate-pulse delay-1000" />
         </div>
 
-        <div className="w-full max-w-2xl mx-auto relative flex-1 flex flex-col">
-          {messages.length === 0 && !isLoading ? (
-            <div className="flex-1 flex items-center justify-center">
+        <div className="w-full max-w-2xl mx-auto relative flex-1 flex flex-col pt-16">
+          <AnimatePresence>
+            {messages.length === 0 && !isLoading && !showCommandPalette && (
               <motion.div
-                className="relative z-10 space-y-12 text-center"
+                key="welcome-message"
+                className="flex-1 flex items-center justify-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+                exit={{ opacity: 0, y: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                  className="inline-block"
-                >
-                  <h1 className="text-2xl sm:text-3xl font-medium tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white/90 to-white/40 pb-1">
-                    How can I help today?
-                  </h1>
+                <div className="relative z-10 space-y-6 text-center">
                   <motion.div
-                    className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: "100%", opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
-                  />
-                </motion.div>
-                <motion.p
-                  className="text-sm text-white/40"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  Type a command or ask a question
-                </motion.p>
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className="inline-block"
+                  >
+                    <h1
+                      className="text-5xl sm:text-6xl text-white/90"
+                      style={{ fontFamily: "'Playfair Display', serif" }}
+                    >
+                      Abby's Little Helper
+                    </h1>
+                  </motion.div>
+                  <motion.p
+                    className="text-base text-white/50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    How can I help today?
+                  </motion.p>
+                </div>
               </motion.div>
-            </div>
-          ) : (
+            )}
+          </AnimatePresence>
+
+          {messages.length > 0 && (
             <main
               ref={chatContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-8"
@@ -352,7 +341,7 @@ export default function AnimatedAIChat() {
                     onKeyDown={handleKeyDown}
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
-                    placeholder="Ask a question..."
+                    placeholder="Ask a question or type '/' for commands..."
                     containerClassName="w-full"
                     className={cn(
                       "w-full px-4 py-3",
@@ -371,49 +360,8 @@ export default function AnimatedAIChat() {
                   />
                 </div>
 
-                <AnimatePresence>
-                  {attachments.length > 0 && (
-                    <motion.div
-                      className="px-4 pb-3 flex gap-2 flex-wrap"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                    >
-                      {attachments.map((file, index) => (
-                        <motion.div
-                          key={index}
-                          className="flex items-center gap-2 text-xs bg-white/[0.03] py-1.5 px-3 rounded-lg text-white/70"
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                        >
-                          <span>{file}</span>
-                          <button
-                            onClick={() => removeAttachment(index)}
-                            className="text-white/40 hover:text-white transition-colors"
-                          >
-                            <XIcon className="w-3 h-3" />
-                          </button>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
                 <div className="p-4 border-t border-white/[0.05] flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <motion.button
-                      type="button"
-                      onClick={handleAttachFile}
-                      whileTap={{ scale: 0.94 }}
-                      className="p-2 text-white/40 hover:text-white/90 rounded-lg transition-colors relative group"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                      <motion.span
-                        className="absolute inset-0 bg-white/[0.05] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        layoutId="button-highlight-attach"
-                      />
-                    </motion.button>
                     <motion.button
                       type="button"
                       data-command-button

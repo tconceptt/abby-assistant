@@ -17,10 +17,8 @@ const deepseek = createOpenAI({
 });
 
 export async function POST(req: Request) {
-  console.log('POST /api/chat called');
   try {
     const { messages, data } = await req.json();
-    console.log('Received data:', JSON.stringify(data, null, 2));
 
     let system: string | undefined = undefined;
     let finalMessages = messages;
@@ -42,10 +40,6 @@ export async function POST(req: Request) {
         ...messages.slice(0, -1),
         { role: "user", content: fullUserPrompt },
       ];
-
-      console.log(
-        'This is a decision request. Using system prompt and modified user prompt.',
-      );
     } else if (data?.isOotd === "true") {
       const { systemPrompt, weather, settings, context } = data;
       const parsedSettings = JSON.parse(settings);
@@ -60,28 +54,17 @@ export async function POST(req: Request) {
         ...messages.slice(0, -1),
         { role: "user", content: fullUserPrompt },
       ];
-      console.log(
-        'This is an OOTD request. Using system prompt and modified user prompt.',
-      );
     } else if (data?.isPottery === "true") {
       const { systemPrompt } = data;
       system = systemPrompt;
-      console.log('This is a Pottery request. Using system prompt.');
     }
 
     const result = await streamText({
       model: deepseek('deepseek-chat'),
       system,
       messages: finalMessages,
-      async onFinish(result) {
-        console.log('Stream finished successfully.');
-      },
-      onError: e => {
-        console.error('Error in streamText:', e);
-      },
     });
 
-    console.log('Returning data stream response.');
     return result.toDataStreamResponse();
   } catch (error) {
     console.error('Error in /api/chat:', error);
