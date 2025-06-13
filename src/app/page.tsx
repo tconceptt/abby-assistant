@@ -1,14 +1,9 @@
 "use client"
 
 import { useChat } from "@ai-sdk/react"
-import { useEffect, useRef, useCallback, useTransition } from "react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
-  Lightbulb,
-  Shirt,
-  Paintbrush,
-  BookOpen,
   Paperclip,
   SendIcon,
   XIcon,
@@ -21,67 +16,17 @@ import { motion, AnimatePresence } from "framer-motion"
 import * as React from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { HelpMeDecideDialog } from "@/components/dialogs/HelpMeDecideDialog"
+import { OotdDialog } from "@/components/dialogs/OotdDialog"
+import { AbbyPotterDialog } from "@/components/dialogs/AbbyPotterDialog"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-
-interface UseAutoResizeTextareaProps {
-  minHeight: number
-  maxHeight?: number
-}
-
-function useAutoResizeTextarea({
-  minHeight,
-  maxHeight,
-}: UseAutoResizeTextareaProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  const adjustHeight = useCallback(
-    (reset?: boolean) => {
-      const textarea = textareaRef.current
-      if (!textarea) return
-
-      if (reset) {
-        textarea.style.height = `${minHeight}px`
-        return
-      }
-
-      textarea.style.height = `${minHeight}px`
-      const newHeight = Math.max(
-        minHeight,
-        Math.min(
-          textarea.scrollHeight,
-          maxHeight ?? Number.POSITIVE_INFINITY,
-        ),
-      )
-
-      textarea.style.height = `${newHeight}px`
-    },
-    [minHeight, maxHeight],
-  )
-
-  useEffect(() => {
-    const textarea = textareaRef.current
-    if (textarea) {
-      textarea.style.height = `${minHeight}px`
-    }
-  }, [minHeight])
-
-  useEffect(() => {
-    const handleResize = () => adjustHeight()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [adjustHeight])
-
-  return { textareaRef, adjustHeight }
-}
-
-interface CommandSuggestion {
-  icon: React.ReactNode
-  label: string
-  description: string
-  prefix: string
-  action?: () => void
-}
+import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea"
+import { TypingDots } from "@/components/chat/TypingDots"
+import {
+  commandSuggestions,
+  type CommandSuggestion,
+} from "@/lib/commands"
+import { handleDecide, handleOotd, handlePottery } from "@/lib/chat-actions"
 
 export default function AnimatedAIChat() {
   const {
@@ -94,11 +39,8 @@ export default function AnimatedAIChat() {
     append,
   } = useChat()
   const [attachments, setAttachments] = useState<string[]>([])
-  const [isPending, startTransition] = useTransition()
   const [activeSuggestion, setActiveSuggestion] = useState<number>(-1)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
-  const [recentCommand, setRecentCommand] = useState<string | null>(null)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 60,
     maxHeight: 200,
@@ -107,69 +49,40 @@ export default function AnimatedAIChat() {
   const commandPaletteRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const [isHelpMeDecideOpen, setIsHelpMeDecideOpen] = useState(false)
+  const [isOotdDialogOpen, setIsOotdDialogOpen] = useState(false)
+  const [isAbbyPotterDialogOpen, setIsAbbyPotterDialogOpen] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
-  const commandSuggestions: CommandSuggestion[] = [
-    {
-      icon: <Lightbulb className="w-4 h-4" />,
-      label: "Help Me Decide",
-      description: "Get help making a decision",
-      prefix: "/decide",
-      action: () => setIsHelpMeDecideOpen(true),
-    },
-    {
-      icon: <Shirt className="w-4 h-4" />,
-      label: "OOTD",
-      description: "Outfit of the day suggestion",
-      prefix: "/ootd",
-    },
-    {
-      icon: <Paintbrush className="w-4 h-4" />,
-      label: "Abby Potter",
-      description: "Pottery assistance",
-      prefix: "/pottery",
-    },
-    {
-      icon: <BookOpen className="w-4 h-4" />,
-      label: "Study Assist",
-      description: "Get help with your studies",
-      prefix: "/study",
-    },
-  ]
-
-  const handleDecide = (options: string[], context: string) => {
-    const userFacingMessage = `Help me decide: ${options.join(" or ")}?`
-    const systemPrompt =
-      "You are a decisive assistant. You must pick one clear winner without commenting on the difficulty of the choice. Choosing neither is not an option. State your decision clearly, then provide a brief explanation for your choice."
-
-    append(
-      {
-        role: "user",
-        content: userFacingMessage,
-      },
-      {
-        data: {
-          isDecision: "true",
-          systemPrompt,
-          options: JSON.stringify(options),
-          context,
-        },
-      },
-    )
-
+  const onDecide = (options: string[], context: string) => {
+    handleDecide(append, options, context)
     setIsHelpMeDecideOpen(false)
+  }
+
+  const onOotd = (weather: string, settings: string[], context: string) => {
+    handleOotd(append, weather, settings, context)
+    setIsOotdDialogOpen(false)
+  }
+
+  const onAskPottery = (question: string) => {
+    handlePottery(append, question)
+    setIsAbbyPotterDialogOpen(false)
   }
 
   const selectCommandSuggestion = (index: number) => {
     const selectedCommand = commandSuggestions[index]
+
     if (selectedCommand.action) {
-      selectedCommand.action()
+      if (selectedCommand.action === "open_decide_dialog") {
+        setIsHelpMeDecideOpen(true)
+      } else if (selectedCommand.action === "open_ootd_dialog") {
+        setIsOotdDialogOpen(true)
+      } else if (selectedCommand.action === "open_pottery_dialog") {
+        setIsAbbyPotterDialogOpen(true)
+      }
     } else {
       setInput(selectedCommand.prefix + " ")
     }
     setShowCommandPalette(false)
-
-    setRecentCommand(selectedCommand.label)
-    setTimeout(() => setRecentCommand(null), 2000)
   }
 
   useEffect(() => {
@@ -195,7 +108,7 @@ export default function AnimatedAIChat() {
     } else {
       setShowCommandPalette(false)
     }
-  }, [input])
+  }, [input, commandSuggestions])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -271,7 +184,19 @@ export default function AnimatedAIChat() {
       <HelpMeDecideDialog
         open={isHelpMeDecideOpen}
         onOpenChange={setIsHelpMeDecideOpen}
-        onDecide={handleDecide}
+        onDecide={onDecide}
+        isLoading={isLoading}
+      />
+      <OotdDialog
+        open={isOotdDialogOpen}
+        onOpenChange={setIsOotdDialogOpen}
+        onSuggest={onOotd}
+        isLoading={isLoading}
+      />
+      <AbbyPotterDialog
+        open={isAbbyPotterDialogOpen}
+        onOpenChange={setIsAbbyPotterDialogOpen}
+        onAsk={onAskPottery}
         isLoading={isLoading}
       />
       <div className="min-h-screen flex flex-col w-full items-center justify-center bg-transparent text-white p-4 sm:p-6 relative overflow-hidden">
@@ -569,32 +494,5 @@ export default function AnimatedAIChat() {
         )}
       </div>
     </>
-  )
-}
-
-function TypingDots() {
-  return (
-    <div className="flex items-center ml-1">
-      {[1, 2, 3].map(dot => (
-        <motion.div
-          key={dot}
-          className="w-1.5 h-1.5 bg-white/90 rounded-full mx-0.5"
-          initial={{ opacity: 0.3 }}
-          animate={{
-            opacity: [0.3, 0.9, 0.3],
-            scale: [0.85, 1.1, 0.85],
-          }}
-          transition={{
-            duration: 1.2,
-            repeat: Infinity,
-            delay: dot * 0.15,
-            ease: "easeInOut",
-          }}
-          style={{
-            boxShadow: "0 0 4px rgba(255, 255, 255, 0.3)",
-          }}
-        />
-      ))}
-    </div>
   )
 }

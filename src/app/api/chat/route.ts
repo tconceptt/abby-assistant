@@ -46,6 +46,27 @@ export async function POST(req: Request) {
       console.log(
         'This is a decision request. Using system prompt and modified user prompt.',
       );
+    } else if (data?.isOotd === "true") {
+      const { systemPrompt, weather, settings, context } = data;
+      const parsedSettings = JSON.parse(settings);
+
+      system = systemPrompt;
+
+      const fullUserPrompt = `I need an outfit for a 22-year-old girl. The weather is ${weather}. The setting is ${parsedSettings.join(
+        ", ",
+      )}. Other context: ${context || "N/A"}`;
+
+      finalMessages = [
+        ...messages.slice(0, -1),
+        { role: "user", content: fullUserPrompt },
+      ];
+      console.log(
+        'This is an OOTD request. Using system prompt and modified user prompt.',
+      );
+    } else if (data?.isPottery === "true") {
+      const { systemPrompt } = data;
+      system = systemPrompt;
+      console.log('This is a Pottery request. Using system prompt.');
     }
 
     const result = await streamText({
