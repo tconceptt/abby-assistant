@@ -11,16 +11,22 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { motion } from "framer-motion"
-import { Sparkles } from "lucide-react"
+import { Sparkles, Check } from "lucide-react"
+import { AnimatePresence } from "framer-motion"
 
 interface OotdDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuggest: (weather: string, settings: string[], context: string) => void
+  onSuggest: (
+    weather: string,
+    settings: string[],
+    context: string,
+    isWalking: boolean,
+  ) => void
   isLoading: boolean
 }
 
-const weatherOptions = ["Sunny", "Cloudy", "Rainy", "Snowy", "Windy"]
+const weatherOptions = ["Sunny", "Cloudy", "Rainy", "Windy"]
 const settingOptions = [
   "Casual",
   "Formal",
@@ -40,6 +46,7 @@ export function OotdDialog({
   const [weather, setWeather] = React.useState("")
   const [settings, setSettings] = React.useState<string[]>([])
   const [context, setContext] = React.useState("")
+  const [isWalking, setIsWalking] = React.useState(false)
 
   const handleSettingChange = (setting: string) => {
     setSettings(prev =>
@@ -54,8 +61,49 @@ export function OotdDialog({
       console.error("Please select weather and at least one setting.")
       return
     }
-    onSuggest(weather, settings, context)
+    onSuggest(weather, settings, context, isWalking)
   }
+
+  const CustomCheckbox = ({
+    label,
+    checked,
+    onChange,
+  }: {
+    label: string
+    checked: boolean
+    onChange: () => void
+  }) => (
+    <label
+      className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border transition-colors ${
+        checked
+          ? "bg-violet-500/20 border-violet-500/50"
+          : "bg-white/[0.05] border-white/10 hover:bg-white/5"
+      }`}
+    >
+      <input type="checkbox" className="sr-only" onChange={onChange} />
+      <div
+        className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+          checked
+            ? "bg-violet-500 border-violet-400"
+            : "border-white/20 bg-white/10"
+        }`}
+      >
+        <AnimatePresence>
+          {checked && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Check className="w-3.5 h-3.5 text-white" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      <span className="text-sm select-none">{label}</span>
+    </label>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,24 +142,25 @@ export function OotdDialog({
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {settingOptions.map(setting => (
-                <label
+                <CustomCheckbox
                   key={setting}
-                  className={`flex items-center gap-2 cursor-pointer p-3 rounded-md transition-colors ${
-                    settings.includes(setting)
-                      ? "bg-violet-500/20 border-violet-500/50"
-                      : "bg-white/[0.05] border-white/10"
-                  } border`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={settings.includes(setting)}
-                    onChange={() => handleSettingChange(setting)}
-                    className="h-4 w-4 rounded-sm text-violet-500 bg-white/[0.1] border-white/20 focus:ring-violet-500/50"
-                  />
-                  <span className="text-sm">{setting}</span>
-                </label>
+                  label={setting}
+                  checked={settings.includes(setting)}
+                  onChange={() => handleSettingChange(setting)}
+                />
               ))}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-white/80">
+              Extra Details
+            </label>
+            <CustomCheckbox
+              label="Walking to Ropack"
+              checked={isWalking}
+              onChange={() => setIsWalking(!isWalking)}
+            />
           </div>
 
           <div className="space-y-2">

@@ -30,6 +30,7 @@ export const handleOotd = (
   weather: string,
   settings: string[],
   context: string,
+  isWalking: boolean,
 ) => {
   const userFacingMessage = `Give me an outfit suggestion for a ${weather.toLowerCase()} day for a ${settings.join(
     ", ",
@@ -49,6 +50,7 @@ export const handleOotd = (
         weather,
         settings: JSON.stringify(settings),
         context,
+        isWalking,
       },
     },
   )

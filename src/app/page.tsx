@@ -52,8 +52,13 @@ export default function AnimatedAIChat() {
     setIsHelpMeDecideOpen(false)
   }
 
-  const onOotd = (weather: string, settings: string[], context: string) => {
-    handleOotd(append, weather, settings, context)
+  const onOotd = (
+    weather: string,
+    settings: string[],
+    context: string,
+    isWalking: boolean,
+  ) => {
+    handleOotd(append, weather, settings, context, isWalking)
     setIsOotdDialogOpen(false)
   }
 

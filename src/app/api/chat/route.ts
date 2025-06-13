@@ -41,14 +41,18 @@ export async function POST(req: Request) {
         { role: "user", content: fullUserPrompt },
       ];
     } else if (data?.isOotd === "true") {
-      const { systemPrompt, weather, settings, context } = data;
+      const { systemPrompt, weather, settings, context, isWalking } = data;
       const parsedSettings = JSON.parse(settings);
 
       system = systemPrompt;
 
+      const walkingInfo = isWalking
+        ? "The user will be walking to a place called Ropack, so the outfit must be comfortable for walking."
+        : ""
+
       const fullUserPrompt = `I need an outfit for a 22-year-old girl. The weather is ${weather}. The setting is ${parsedSettings.join(
         ", ",
-      )}. Other context: ${context || "N/A"}`;
+      )}. ${walkingInfo} Other context: ${context || "N/A"}`;
 
       finalMessages = [
         ...messages.slice(0, -1),
