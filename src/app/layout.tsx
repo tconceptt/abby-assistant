@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Decision Bot',
+  title: 'Antati',
   description: 'A bot that helps you make decisions.',
 };
 
