@@ -63,14 +63,14 @@ export function OotdDialog({
         <DialogHeader>
           <DialogTitle className="text-xl">Outfit Suggestion</DialogTitle>
           <DialogDescription className="text-white/60">
-            Tell me about your day, and I'll suggest the perfect outfit.
+            Tell me about your day, and I&apos;ll suggest the perfect outfit.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-white/80">
-              What's the weather like?
+              What&apos;s the weather like?
             </label>
             <select
               value={weather}
@@ -90,7 +90,7 @@ export function OotdDialog({
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-white/80">
-              What's the setting?
+              What&apos;s the setting?
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {settingOptions.map(setting => (

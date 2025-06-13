@@ -60,7 +60,7 @@ export function HelpMeDecideDialog({
         <DialogHeader>
           <DialogTitle className="text-xl">Help Me Decide</DialogTitle>
           <DialogDescription className="text-white/60">
-            Enter the options you're choosing between and add any context.
+            Provide a few options, and I&apos;ll help you pick one.
           </DialogDescription>
         </DialogHeader>
 

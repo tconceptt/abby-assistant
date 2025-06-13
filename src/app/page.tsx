@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   SendIcon,
-  XIcon,
   LoaderIcon,
   Command,
   User,
@@ -103,7 +102,7 @@ export default function AnimatedAIChat() {
     } else {
       setShowCommandPalette(false)
     }
-  }, [input, commandSuggestions])
+  }, [input])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -160,7 +159,7 @@ export default function AnimatedAIChat() {
     } else if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       if (input.trim()) {
-        handleSubmit(e as any)
+        handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)
       }
     }
   }
@@ -214,7 +213,7 @@ export default function AnimatedAIChat() {
                       className="text-5xl sm:text-6xl text-white/90"
                       style={{ fontFamily: "'Playfair Display', serif" }}
                     >
-                      Abby's Little Helper
+                      Abby&apos;s Little Helper
                     </h1>
                   </motion.div>
                   <motion.p
@@ -327,7 +326,7 @@ export default function AnimatedAIChat() {
               <form
                 onSubmit={e => {
                   e.preventDefault()
-                  handleSubmit(e)
+                  handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)
                 }}
               >
                 <div className="p-4">
